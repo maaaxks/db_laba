@@ -1,5 +1,6 @@
 ### Variant 4
-'WITH passenger_journeys AS (
+```sql
+WITH passenger_journeys AS (
     SELECT tf.ticket_no, t.passenger_name,
         f.departure_airport,
         f.arrival_airport,
@@ -44,22 +45,27 @@ LEFT JOIN transit_passengers tp ON a.airport_code = tp.transit_airport
 LEFT JOIN total_passengers tp2 ON a.airport_code = tp2.airport 
 WHERE COALESCE(tp.transit_passengers_count, 0) > 0
 ORDER BY transit_passengers DESC
-LIMIT 20;'
+LIMIT 20;
+```
 * Если очень коротко, то сначала составляем маршруты пассажиров, ищем ессть ли следующие аэропорты в пути, по этой информации считаем количество тразитных пассажиров(тех у кого есть следующие остановки), обычных пассажиров и среднее время стыковки, затем выводим.
 * Если же подробней, то: 
 использую with .... as, чтобы создать временные результаты, временными результатми иемю ввиду здесь passenger_journeys, transit_passengers, total_passengers. Последние по названию понятно вычисляются количество тразитных и всех пассажиров для последующего соотношения и подсчета, их я потом тоже вывожу для простоты. passenger_journeys же это маршрут пассажиров, он нужен чтобы смотреть на следующий аэропорт в пути пассажира(next_departure_airport, если он конечно есть).
 теперь по каждому отдельно
 # passenger_journeys
 нам нужны данные столбцы: аэропорты вылета/прилета и время прилета/вылета для расчета времени стыковки 
-'tf.ticket_no, t.passenger_name,
+```sql
+tf.ticket_no, t.passenger_name,
         f.departure_airport,
         f.arrival_airport,
         f.scheduled_departure,
-        f.scheduled_arrival'
+        f.scheduled_arrival
+```
 их вытаскиваем с помощью join нескольких таблиц, делаем это так
-    'FROM bookings.ticket_flights tf
+    ```
+    FROM bookings.ticket_flights tf
     JOIN bookings.flights f ON tf.flight_id = f.flight_id
-    JOIN bookings.tickets t ON tf.ticket_no = t.ticket_no'
+    JOIN bookings.tickets t ON tf.ticket_no = t.ticket_no
+    ```
 далее используем lead для определения следующего аэропорта и времени следующего вылета(после текущего), так как нужны именно они, чтобы понимать является данная точка тразитной или нет, используем тут еще partition для разделения данных(каждого пассажира отдельно) и order by для упорядочивания по времени вылета. Этим (следующий аэропорт в пути пассажира и время слледующего вылета) даем псевдонимы next_departure_airport, next_departure_time соответственно.
 # transit_passengers
 Cчитаем количество тразитных пассажиров по каждому аэропорту. Для этого сначала фильтруем where, чтобы следующий аэропорт существовал (не null) и чтобы аэропорт прилета и вылета совпадали(пересел он там значит), затем группируем по аэропортам прилета и затем для каждой этой группы с помощью count считаем количество строк в группе(это и есть количество транзитных пассажиров для данного аэропорта). Еще высчитываем тут же среднее время стыковки с помощью функции avg от разности времени прилета и вылета
