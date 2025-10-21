@@ -7,7 +7,7 @@
 * Сначала фильтруем по аэропорту вылета на уфу, потом добавляем филтрацию по разности времени запланированного и актуального вылета
 2.
 ```sql
-  SELECT * FROM bookings.flights WHERE arrival_airport='SVO' AND actual_arrival >='2016-07-22 16:00' AND actual_arrival < '2016-07-22 19:00';
+  SELECT * FROM bookings.flights WHERE arrival_airport='SVO' AND actual_arrival >='2017-07-22 16:00' AND actual_arrival < '2017-07-22 19:00';
 ```
 * Фильтруем(c помощью where) по аэропорту SVO и времени больше 16:00 и меньше 19:00
 3.
